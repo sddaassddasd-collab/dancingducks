@@ -125,47 +125,87 @@
   </main>
 
   <script>
-    const timeouts = new Map();
+  const timeouts = new Map();
 
-    function playFor(button){
-      const targetId = button.dataset.target;
-      const audioSrc = button.dataset.audio;
-      const duration = parseInt(button.dataset.duration || "15000", 10);
-      const img = document.getElementById(targetId);
-      const card = button.closest('.duck');
-      const duckId = card.dataset.id;
-      const audioEl = document.getElementById('audio-' + duckId);
+  function stopFor(button){
+    const targetId = button.dataset.target;
+    const img = document.getElementById(targetId);
+    const card = button.closest('.duck');
+    const duckId = card.dataset.id;
+    const audioEl = document.getElementById('audio-' + duckId);
 
-      if (audioEl && audioEl.querySelector('source')?.getAttribute('src') !== audioSrc){
-        audioEl.innerHTML = `<source src="${audioSrc}" type="audio/mpeg">`;
-        audioEl.load();
-      }
-
-      if (audioEl){
-        try{ audioEl.pause(); audioEl.currentTime = 0; }catch(e){}
-        audioEl.play().catch(()=>{});
-      }
-
-      if (timeouts.has(targetId)){
-        clearTimeout(timeouts.get(targetId));
-        timeouts.delete(targetId);
-      }
-      img.classList.remove('bob');
-      void img.offsetWidth;
-      img.classList.add('bob');
-
-      const t = setTimeout(()=>{
-        img.classList.remove('bob');
-        timeouts.delete(targetId);
-      }, duration);
-      timeouts.set(targetId, t);
+    if (audioEl){
+      try{ audioEl.pause(); }catch(e){}
+      try{ audioEl.currentTime = 0; }catch(e){}
+      audioEl.onended = null;
     }
 
-    document.addEventListener('click', (e)=>{
-      const btn = e.target.closest('.radio-btn');
-      if (!btn) return;
-      playFor(btn);
-    });
-  </script>
+    if (timeouts.has(targetId)){
+      clearTimeout(timeouts.get(targetId));
+      timeouts.delete(targetId);
+    }
+
+    img.classList.remove('bob');
+    button.dataset.playing = "0";
+    button.textContent = "📻";
+    button.setAttribute('aria-label', 'Nhấn vào radio / Click the radio');
+  }
+
+  function playFor(button){
+    // 若已在播放則改為停止
+    if (button.dataset.playing === "1"){
+      stopFor(button);
+      return;
+    }
+
+    const targetId = button.dataset.target;
+    const audioSrc = button.dataset.audio;
+    const duration = parseInt(button.dataset.duration || "15000", 10);
+    const img = document.getElementById(targetId);
+    const card = button.closest('.duck');
+    const duckId = card.dataset.id;
+    const audioEl = document.getElementById('audio-' + duckId);
+
+    // 切換/載入聲音來源
+    if (audioEl && audioEl.querySelector('source')?.getAttribute('src') !== audioSrc){
+      audioEl.innerHTML = `<source src="${audioSrc}" type="audio/mpeg">`;
+      audioEl.load();
+    }
+
+    // 播放音樂
+    if (audioEl){
+      try{ audioEl.pause(); audioEl.currentTime = 0; }catch(e){}
+      audioEl.play().catch(()=>{});
+      // 音檔播完後自動還原
+      audioEl.onended = ()=> stopFor(button);
+    }
+
+    // 重置並啟動動畫
+    if (timeouts.has(targetId)){
+      clearTimeout(timeouts.get(targetId));
+      timeouts.delete(targetId);
+    }
+    img.classList.remove('bob');
+    void img.offsetWidth; // 重新觸發動畫
+    img.classList.add('bob');
+
+    // 標記為播放中＆改成停止圖示
+    button.dataset.playing = "1";
+    button.textContent = "⏹️";
+    button.setAttribute('aria-label', 'Dừng phát / Stop');
+
+    // 到時間自動停止與還原
+    const t = setTimeout(()=>{
+      stopFor(button);
+    }, duration);
+    timeouts.set(targetId, t);
+  }
+
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.radio-btn');
+    if (!btn) return;
+    playFor(btn);
+  });
+</script>
 </body>
 </html>
