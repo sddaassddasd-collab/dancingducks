@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dancing Ducks</title>
   <style>
     :root{
-      --bg:#0b1e3a;          /* 深藍背景 */
-      --card:#0f254d;        /* 卡片底色 */
+      --bg:#0b1e3a;
+      --card:#0f254d;
       --glass: rgba(255,255,255,.08);
       --radius:18px;
     }
@@ -36,7 +36,7 @@
     }
     .imgwrap{
       display:flex; justify-content:center; align-items:center;
-      aspect-ratio: 1 / 1;   /* 正方形展示區 */
+      aspect-ratio: 1 / 1;
       overflow:hidden; border-radius:14px;
       background: rgba(255,255,255,.04);
     }
@@ -45,14 +45,14 @@
       will-change: transform;
     }
 
-    /* 震動（上下輕微點頭）— 1 秒一下，共 15 秒 */
+    /* Bob animation */
     @keyframes bob {
       0%   { transform: translateY(0) }
       50%  { transform: translateY(-8px) }
       100% { transform: translateY(0) }
     }
     .bob {
-      animation: bob 1s ease-in-out 15;
+      animation: bob 1s ease-in-out infinite;
     }
 
     .controls{
@@ -87,9 +87,9 @@
         <img src="duck1.png" alt="Duck 1" id="img-1">
       </div>
       <div class="controls">
-        <button class="radio-btn" aria-label="播放 Duck 1 音效" data-audio="dance1.mp3" data-target="img-1">📻</button>
+        <button class="radio-btn" aria-label="Nhấn vào radio / Click the radio" data-audio="dance1.mp3" data-target="img-1" data-duration="22000">📻</button>
       </div>
-      <div class="label">點擊收音機播放：dance1.mp3（震動 15 秒）</div>
+      <div class="label">Nhấn vào radio · Click the radio</div>
       <audio id="audio-1" preload="auto">
         <source src="dance1.mp3" type="audio/mpeg">
       </audio>
@@ -101,9 +101,9 @@
         <img src="duck2.png" alt="Duck 2" id="img-2">
       </div>
       <div class="controls">
-        <button class="radio-btn" aria-label="播放 Duck 2 音效" data-audio="dance2.mp3" data-target="img-2">📻</button>
+        <button class="radio-btn" aria-label="Nhấn vào radio / Click the radio" data-audio="dance2.mp3" data-target="img-2" data-duration="38000">📻</button>
       </div>
-      <div class="label">點擊收音機播放：dance2.mp3（震動 15 秒）</div>
+      <div class="label">Nhấn vào radio · Click the radio</div>
       <audio id="audio-2" preload="auto">
         <source src="dance2.mp3" type="audio/mpeg">
       </audio>
@@ -115,9 +115,9 @@
         <img src="duck3.png" alt="Duck 3" id="img-3">
       </div>
       <div class="controls">
-        <button class="radio-btn" aria-label="播放 Duck 3 音效" data-audio="dance3.mp3" data-target="img-3">📻</button>
+        <button class="radio-btn" aria-label="Nhấn vào radio / Click the radio" data-audio="dance3.mp3" data-target="img-3" data-duration="14000">📻</button>
       </div>
-      <div class="label">點擊收音機播放：dance3.mp3（震動 15 秒）</div>
+      <div class="label">Nhấn vào radio · Click the radio</div>
       <audio id="audio-3" preload="auto">
         <source src="dance3.mp3" type="audio/mpeg">
       </audio>
@@ -125,46 +125,39 @@
   </main>
 
   <script>
-    // 為避免多次點擊造成 class 疊加與計時錯亂，為每隻鴨子保留 timeout 參考
     const timeouts = new Map();
 
     function playFor(button){
-      const targetId = button.dataset.target;           // 對應 img id
-      const audioSrc = button.dataset.audio;            // 對應音檔路徑
+      const targetId = button.dataset.target;
+      const audioSrc = button.dataset.audio;
+      const duration = parseInt(button.dataset.duration || "15000", 10);
       const img = document.getElementById(targetId);
       const card = button.closest('.duck');
       const duckId = card.dataset.id;
       const audioEl = document.getElementById('audio-' + duckId);
 
-      // 若 <audio> 內已有正確來源就用它；否則保險起見設置 src
       if (audioEl && audioEl.querySelector('source')?.getAttribute('src') !== audioSrc){
         audioEl.innerHTML = `<source src="${audioSrc}" type="audio/mpeg">`;
         audioEl.load();
       }
 
-      // 重置與播放音效（必須在使用者點擊手勢中）
       if (audioEl){
-        try{
-          audioEl.pause();
-          audioEl.currentTime = 0;
-        }catch(e){}
-        audioEl.play().catch(()=>{/* 某些瀏覽器需要使用者互動，這裡已是點擊事件 */});
+        try{ audioEl.pause(); audioEl.currentTime = 0; }catch(e){}
+        audioEl.play().catch(()=>{});
       }
 
-      // 清理舊的計時器後重新加上 bob 動畫
       if (timeouts.has(targetId)){
         clearTimeout(timeouts.get(targetId));
         timeouts.delete(targetId);
       }
-      img.classList.remove('bob'); // 重新觸發動畫的技巧：先移除再加上
-      // 強制重繪以重啟 CSS 動畫
+      img.classList.remove('bob');
       void img.offsetWidth;
       img.classList.add('bob');
 
       const t = setTimeout(()=>{
         img.classList.remove('bob');
         timeouts.delete(targetId);
-      }, 15000); // 15 秒後停止
+      }, duration);
       timeouts.set(targetId, t);
     }
 
